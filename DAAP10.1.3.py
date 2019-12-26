@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #  NOTE: This program does not support either NADF or Z-Dictionaries.
 
 #  This is DAAP10.1.3.py; it is based on DAAP09.6; it adds several
@@ -649,8 +651,29 @@ def covar(list1, list2):
         corr = psum / math.sqrt(var1 * var2)
     return corr
 
-Directory = input('Type subDirectory name containing your files:')
-os.chdir(Directory)
+
+import argparse
+import os
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--non-interactive', action='store_true')
+parser.add_argument('--directory', type=str, default='default/')
+parser.add_argument('--source-directory', type=str, default='.')
+parser.add_argument('--skip-c9-check', action='store_true')
+args = parser.parse_args()
+
+if not args.non_interactive:
+    Directory = input('Type subDirectory name containing your files:')
+    os.chdir(Directory)
+else:
+    Directory = args.directory
+
+if not Directory.endswith('/'):
+    Directory += '/'
+
+os.makedirs('DATA/' + Directory, exist_ok=True)
+
 LOGFile = 'DATA/' + Directory + '.LOGFile.txt'
 open(LOGFile, 'w')
 MTTFile = 'DATA/' + Directory + '.MTTFile.txt'
@@ -680,7 +703,7 @@ TxtFiles = []
 SMTFiles = []
 WRDFiles = []
 TTRFiles = []
-Files0 = os.listdir('.')
+Files0 = os.listdir(args.source_directory)
 for v in range(len(Files0)):
     SplitFile = re.split('\.', Files0[v])
     if len(SplitFile) > 2:
@@ -690,7 +713,7 @@ for v in range(len(Files0)):
     elif len(SplitFile) == 1:
         continue
     elif re.match('txt', SplitFile[1]) is not None or re.match('TXT', SplitFile[1]) is not None:
-        TxtFiles.append(Files0[v])
+        TxtFiles.append(os.path.join(args.source_directory, Files0[v]))
         WRDFile = 'DATA/' + SplitFile[0] + '.WRD.csv'
         WRDFiles.append(WRDFile)
         SMTFile = 'DATA/' + SplitFile[0] + '.SMT.csv'
@@ -1118,7 +1141,7 @@ for v in range(len(TxtFiles)):
                       'categories at head of file', TxtFiles[0])
                 ERRORS1 += 1
 
-    if c9Check == 0:
+    if c9Check == 0 and not args.skip_c9_check:
         print('ERROR 14: Missing \\c9')
         print('ERROR 14: Missing \\c9', file=open(LOGFile, 'a'))
         ERRORS1 += 1
